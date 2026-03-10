@@ -1,6 +1,5 @@
 "use client";
 
-import { Header } from "@/components/layout/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +15,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/shared/page-header";
 import {
   ArrowLeft,
   ArrowRight,
@@ -42,18 +42,15 @@ export default function NewLoanPage() {
   const [currentStep, setCurrentStep] = useState(1);
 
   return (
-    <>
-      <Header>
-        <div className="flex items-center gap-3">
-          <Link href="/loans">
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <h1 className="text-lg font-semibold">New Loan Application</h1>
-        </div>
-      </Header>
-      <div className="p-6">
+    <div className="p-6">
+      <div className="flex items-center gap-3 mb-6">
+        <Link href="/loans">
+          <Button variant="ghost" size="icon" className="h-8 w-8">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        </Link>
+        <PageHeader title="New Loan Application" />
+      </div>
         <div className="mx-auto max-w-4xl">
           {/* Stepper */}
           <div className="mb-8">
@@ -451,7 +448,6 @@ export default function NewLoanPage() {
             )}
           </div>
         </div>
-      </div>
-    </>
+    </div>
   );
 }
