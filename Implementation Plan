@@ -1,0 +1,330 @@
+# LOS Frontend — Feature-Based Architecture Rebuild
+
+Complete rebuild of the Loan Origination System frontend following Next.js 16 senior-level best practices, feature-based modular architecture, Zod validation, Server Components + Suspense, and middleware route security.
+
+## Proposed Architecture
+
+```
+src/
+├── app/                              # Routes only — thin orchestration layer
+│   ├── layout.tsx                    # Root: fonts, providers, metadata
+│   ├── page.tsx                      # Redirect → /dashboard
+│   ├── middleware.ts                 # Route security (auth gate)
+│   ├── (dashboard)/
+│   │   ├── layout.tsx                # Sidebar + Header shell (Server Component)
+│   │   ├── dashboard/page.tsx        # Server Component → Suspense wrappers
+│   │   ├── loans/
+│   │   │   ├── page.tsx
+│   │   │   ├── [id]/page.tsx
+│   │   │   └── new/page.tsx
+│   │   ├── products/page.tsx
+│   │   ├── approvals/page.tsx
+│   │   ├── disbursement/page.tsx
+│   │   ├── repayments/page.tsx
+│   │   ├── merchants/page.tsx
+│   │   ├── users/page.tsx
+│   │   ├── credit-scoring/page.tsx
+│   │   ├── risk-analytics/page.tsx
+│   │   ├── model-testing/page.tsx
+│   │   ├── fraud-detection/page.tsx
+│   │   ├── audit-logs/page.tsx
+│   │   └── settings/page.tsx
+│   └── globals.css
+│
+├── components/                       # Shared, reusable UI primitives
+│   ├── ui/                           # shadcn/ui components (button, card, etc.)
+│   ├── layout/                       # App shell components
+│   │   ├── app-sidebar.tsx           # Client Component — sidebar nav
+│   │   └── header.tsx                # Client Component — search + notifications
+│   └── shared/                       # Cross-feature components
+│       ├── stat-card.tsx             # Reusable KPI stat card
+│       ├── data-table-skeleton.tsx   # Suspense skeleton for tables
+│       ├── page-header.tsx           # Consistent page title + actions
+│       └── status-badge.tsx          # Reusable status badge mapper
+│
+├── features/                         # Feature modules — domain logic lives here
+│   ├── dashboard/
+│   │   ├── components/               # Dashboard-specific UI
+│   │   │   ├── kpi-cards.tsx
+│   │   │   ├── loan-trends-chart.tsx
+│   │   │   ├── loan-status-breakdown.tsx
+│   │   │   ├── recent-applications.tsx
+│   │   │   └── pending-tasks.tsx
+│   │   ├── actions/                  # Server Actions
+│   │   │   └── get-dashboard-data.ts
+│   │   └── types.ts
+│   │
+│   ├── loans/
+│   │   ├── components/
+│   │   │   ├── loan-table.tsx        # Client: interactive table
+│   │   │   ├── loan-filters.tsx      # Client: search + filters
+│   │   │   ├── loan-detail-tabs.tsx  # Client: tabbed loan detail
+│   │   │   └── loan-form/            # Multi-step form
+│   │   │       ├── loan-form-stepper.tsx
+│   │   │       ├── steps/
+│   │   │       │   ├── personal-info-step.tsx
+│   │   │       │   ├── loan-details-step.tsx
+│   │   │       │   ├── assets-step.tsx
+│   │   │       │   ├── documents-step.tsx
+│   │   │       │   └── review-step.tsx
+│   │   │       └── use-loan-form.ts  # Form state hook
+│   │   ├── actions/
+│   │   │   ├── get-loans.ts
+│   │   │   ├── get-loan-by-id.ts
+│   │   │   └── create-loan.ts        # Server Action with Zod
+│   │   ├── schemas/
+│   │   │   └── loan-schema.ts        # Zod schemas for ALL form fields
+│   │   └── types.ts
+│   │
+│   ├── products/
+│   │   ├── components/
+│   │   │   └── products-table.tsx
+│   │   ├── actions/
+│   │   │   └── get-products.ts
+│   │   └── types.ts
+│   │
+│   ├── approvals/
+│   │   ├── components/
+│   │   │   └── approval-cards.tsx
+│   │   ├── actions/
+│   │   │   └── get-approvals.ts
+│   │   └── types.ts
+│   │
+│   ├── disbursement/
+│   │   ├── components/
+│   │   │   └── disbursement-table.tsx
+│   │   ├── actions/
+│   │   │   └── get-disbursements.ts
+│   │   └── types.ts
+│   │
+│   ├── repayments/
+│   │   ├── components/
+│   │   │   └── repayments-table.tsx
+│   │   ├── actions/
+│   │   │   └── get-repayments.ts
+│   │   └── types.ts
+│   │
+│   ├── merchants/
+│   │   ├── components/
+│   │   │   └── merchants-table.tsx
+│   │   ├── actions/
+│   │   │   └── get-merchants.ts
+│   │   └── types.ts
+│   │
+│   ├── users/
+│   │   ├── components/
+│   │   │   ├── users-table.tsx
+│   │   │   └── roles-grid.tsx
+│   │   ├── actions/
+│   │   │   └── get-users.ts
+│   │   └── types.ts
+│   │
+│   ├── credit-scoring/
+│   │   ├── components/
+│   │   │   ├── scoring-models.tsx
+│   │   │   ├── score-distribution.tsx
+│   │   │   └── recent-assessments.tsx
+│   │   ├── actions/
+│   │   │   └── get-credit-data.ts
+│   │   └── types.ts
+│   │
+│   ├── risk-analytics/
+│   │   ├── components/
+│   │   │   ├── risk-trend-chart.tsx
+│   │   │   ├── risk-categories.tsx
+│   │   │   ├── risk-by-product.tsx
+│   │   │   └── early-warnings.tsx
+│   │   ├── actions/
+│   │   │   └── get-risk-data.ts
+│   │   └── types.ts
+│   │
+│   ├── model-testing/
+│   │   ├── components/
+│   │   │   ├── test-results.tsx
+│   │   │   └── simulation-form.tsx
+│   │   ├── actions/
+│   │   │   └── get-test-results.ts
+│   │   ├── schemas/
+│   │   │   └── simulation-schema.ts  # Zod for simulation form
+│   │   └── types.ts
+│   │
+│   ├── fraud-detection/
+│   │   ├── components/
+│   │   │   ├── fraud-alerts-table.tsx
+│   │   │   ├── fraud-by-type.tsx
+│   │   │   └── quick-actions.tsx
+│   │   ├── actions/
+│   │   │   └── get-fraud-data.ts
+│   │   └── types.ts
+│   │
+│   └── audit-logs/
+│       ├── components/
+│       │   └── audit-logs-table.tsx
+│       ├── actions/
+│       │   └── get-audit-logs.ts
+│       └── types.ts
+│
+├── lib/                              # Pure utilities
+│   ├── utils.ts                      # cn() + generic helpers
+│   └── constants.ts                  # App-wide constants / nav config
+│
+└── middleware.ts                     # Route security middleware
+```
+
+## Key Design Principles
+
+### 1. Server Components by Default
+- **Page files are Server Components** — they call `async` data-fetching functions directly
+- Interactive parts (`"use client"`) only where needed: form inputs, charts, dropdowns, sidebar toggle
+- Data-fetching functions in `features/*/actions/` simulate async data (ready for real API later)
+
+### 2. Suspense Boundaries
+- Each page wraps data-dependent sections in `<Suspense fallback={<Skeleton />}>`
+- Skeletons match the shape of the real content (table skeleton, card skeleton, chart skeleton)
+- Multiple independent Suspense boundaries per page for progressive rendering
+
+### 3. Feature-Based Module Pattern
+- Each feature is self-contained: `components/`, `actions/`, `schemas/`, `types.ts`
+- No cross-feature imports — shared code lives in `@/components/shared/` or `@/lib/`
+- App Router pages are thin wrappers: import feature components, pass data
+
+### 4. Zod Validation
+- **Loan application form**: validates all 5 steps — no negative amounts, valid emails, phone formats, SSN format, positive income/years employed
+- **Model testing simulation form**: validates sample size (positive integer), required model/dataset
+- Validation runs both client-side (instant feedback) and server-side (in Server Actions)
+
+### 5. Route Security Middleware
+- `middleware.ts` at project root
+- Checks for a session token cookie (`los-session`)
+- Protects all `/dashboard/*` routes
+- Redirects unauthenticated users to `/login`
+- Allows public routes: `/login`, `/api/*`, `/_next/*`, `/favicon.ico`
+
+## Proposed Changes
+
+---
+
+### Project Scaffolding
+
+#### [NEW] Re-scaffold Next.js 16 project with `create-next-app`
+
+Full re-initialization with TypeScript, Tailwind CSS, ESLint, App Router, `src/` directory.
+
+---
+
+### shadcn/ui Setup
+
+#### [NEW] Initialize shadcn and install UI components
+
+All shadcn components go to `@/components/ui/`. Install: button, card, table, input, select, badge, tabs, avatar, progress, separator, sidebar, tooltip, label, skeleton, dialog, dropdown-menu, command, popover, sheet.
+
+---
+
+### Design Tokens
+
+#### [NEW] `globals.css`
+
+Stitch design tokens: primary `#1152d4` (oklch), Inter font, semantic colors, border radius.
+
+---
+
+### Root Layout & App Shell
+
+#### [NEW] `src/app/layout.tsx`
+Root layout with Inter font, `<TooltipProvider>`, metadata.
+
+#### [NEW] `src/app/page.tsx`
+Redirect to `/dashboard`.
+
+#### [NEW] `src/app/(dashboard)/layout.tsx`
+Server Component: `<SidebarProvider>` + `<AppSidebar>` + `<Header>` + `{children}`.
+
+---
+
+### Layout Components
+
+#### [NEW] `src/components/layout/app-sidebar.tsx`
+Collapsible sidebar — `"use client"` for toggle state.
+
+#### [NEW] `src/components/layout/header.tsx`
+Header bar with search and notifications — `"use client"`.
+
+---
+
+### Shared Components
+
+#### [NEW] `src/components/shared/stat-card.tsx`
+Reusable stat card: icon, label, value, optional change indicator.
+
+#### [NEW] `src/components/shared/data-table-skeleton.tsx`
+Skeleton loader matching table shape for Suspense fallbacks.
+
+#### [NEW] `src/components/shared/page-header.tsx`
+Page title + optional action button slot.
+
+#### [NEW] `src/components/shared/status-badge.tsx`
+Maps status strings to badge variants.
+
+---
+
+### Middleware
+
+#### [NEW] `src/middleware.ts`
+Route protection: checks `los-session` cookie, redirects to `/login` if missing, allows public routes.
+
+---
+
+### Feature: Dashboard
+
+#### [NEW] `src/features/dashboard/actions/get-dashboard-data.ts`
+Async data fetcher returning KPI stats, chart data, recent applications, pending tasks.
+
+#### [NEW] `src/features/dashboard/components/*.tsx`
+KPI cards, trend chart, status breakdown, recent apps table, pending tasks.
+
+#### [NEW] `src/app/(dashboard)/dashboard/page.tsx`
+Server Component with Suspense wrappers around each dashboard section.
+
+---
+
+### Feature: Loans (with Zod)
+
+#### [NEW] `src/features/loans/schemas/loan-schema.ts`
+Zod schemas for personal info (email, phone, positive income, valid SSN), loan details (positive amounts, valid rates), assets (positive values), and document upload.
+
+#### [NEW] `src/features/loans/actions/*.ts`
+Server Actions: `getLoans`, `getLoanById`, `createLoan` (validates with Zod).
+
+#### [NEW] `src/features/loans/components/*.tsx`
+Loan table, filters, detail tabs, multi-step form with per-step Zod validation.
+
+#### [NEW] `src/app/(dashboard)/loans/page.tsx`, `[id]/page.tsx`, `new/page.tsx`
+Server Components with Suspense for loan list and detail; client new-loan form page.
+
+---
+
+### Features: Products, Approvals, Disbursement, Repayments, Merchants, Users
+
+Each follows the same pattern: `actions/` (async data), `components/` (client UI), thin page wrapper with Suspense.
+
+---
+
+### Features: Credit Scoring, Risk Analytics, Model Testing (with Zod), Fraud Detection, Audit Logs
+
+Same pattern. Model testing additionally has `schemas/simulation-schema.ts` for Zod validation of simulation parameters.
+
+---
+
+## Verification Plan
+
+### Build Verification
+```bash
+npm run build
+```
+Expect zero TypeScript/build errors.
+
+### Browser Verification
+- Navigate all 16 routes, confirm sidebar + header + content render
+- Test Suspense skeletons by observing brief loading states
+- Test Zod validation on `/loans/new` — submit empty fields, negative amounts, invalid email
+- Test middleware by clearing cookies and hitting a protected route → expect redirect
