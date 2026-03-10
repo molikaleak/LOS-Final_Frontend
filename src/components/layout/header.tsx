@@ -5,18 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-interface HeaderProps {
-  title?: string;
-  children?: React.ReactNode;
-}
-
-export function Header({ title, children }: HeaderProps) {
+export function Header() {
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border bg-card px-6">
-      <div className="flex items-center gap-4">
-        {title && <h1 className="text-lg font-semibold text-foreground">{title}</h1>}
-        {children}
-      </div>
+    <header className="flex h-16 items-center justify-end border-b border-border bg-card px-6 shrink-0">
       <div className="flex items-center gap-3">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
