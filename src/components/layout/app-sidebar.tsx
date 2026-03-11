@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   FileText,
@@ -33,27 +33,29 @@ import {
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
+import { useRoleStore, ROLES } from "@/lib/store";
+
 const mainNavItems = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Loan Applications", href: "/loans", icon: FileText },
-  { label: "Loan Products", href: "/products", icon: Package },
-  { label: "Approvals", href: "/approvals", icon: CheckSquare },
-  { label: "Disbursement", href: "/disbursement", icon: Wallet },
-  { label: "Repayments", href: "/repayments", icon: Receipt },
-  { label: "Merchants", href: "/merchants", icon: Store },
+  { id: "dashboard", label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { id: "loans", label: "Loan Applications", href: "/loans", icon: FileText },
+  { id: "products", label: "Loan Products", href: "/products", icon: Package },
+  { id: "approvals", label: "Approvals", href: "/approvals", icon: CheckSquare },
+  { id: "disbursement", label: "Disbursement", href: "/disbursement", icon: Wallet },
+  { id: "repayments", label: "Repayments", href: "/repayments", icon: Receipt },
+  { id: "merchants", label: "Merchants", href: "/merchants", icon: Store },
 ];
 
 const analyticsNavItems = [
-  { label: "Credit Scoring", href: "/credit-scoring", icon: CreditCard },
-  { label: "Risk Analytics", href: "/risk-analytics", icon: BarChart3 },
-  { label: "Model Testing", href: "/model-testing", icon: FlaskConical },
-  { label: "Fraud Detection", href: "/fraud-detection", icon: AlertTriangle },
+  { id: "credit-scoring", label: "Credit Scoring", href: "/credit-scoring", icon: CreditCard },
+  { id: "risk-analytics", label: "Risk Analytics", href: "/risk-analytics", icon: BarChart3 },
+  { id: "model-testing", label: "Model Testing", href: "/model-testing", icon: FlaskConical },
+  { id: "fraud-detection", label: "Fraud Detection", href: "/fraud-detection", icon: AlertTriangle },
 ];
 
 const systemNavItems = [
-  { label: "Users & Roles", href: "/users", icon: Users },
-  { label: "Audit Logs", href: "/audit-logs", icon: ClipboardList },
-  { label: "Settings", href: "/settings", icon: Settings },
+  { id: "users", label: "Users & Roles", href: "/users", icon: Users },
+  { id: "audit-logs", label: "Audit Logs", href: "/audit-logs", icon: ClipboardList },
+  { id: "settings", label: "Settings", href: "/settings", icon: Settings },
 ];
 
 interface NavItemProps {
@@ -97,7 +99,12 @@ function NavItem({ item, collapsed, isActive }: NavItemProps) {
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+  
+  // Connect to Zustand store
+  const { hasAccess, currentRole } = useRoleStore();
+  const activeRoleDetails = ROLES.find((r) => r.id === currentRole);
 
   const isActive = (href: string) => {
     if (href === "/dashboard") return pathname === "/dashboard";
@@ -141,7 +148,7 @@ export function AppSidebar() {
           </p>
         )}
         <nav className="flex flex-col gap-0.5">
-          {mainNavItems.map((item) => (
+          {mainNavItems.filter((item) => hasAccess(item.id)).map((item) => (
             <NavItem
               key={item.href}
               item={item}
@@ -159,7 +166,7 @@ export function AppSidebar() {
           </p>
         )}
         <nav className="flex flex-col gap-0.5">
-          {analyticsNavItems.map((item) => (
+          {analyticsNavItems.filter((item) => hasAccess(item.id)).map((item) => (
             <NavItem
               key={item.href}
               item={item}
@@ -177,7 +184,7 @@ export function AppSidebar() {
           </p>
         )}
         <nav className="flex flex-col gap-0.5">
-          {systemNavItems.map((item) => (
+          {systemNavItems.filter((item) => hasAccess(item.id)).map((item) => (
             <NavItem
               key={item.href}
               item={item}
@@ -208,12 +215,25 @@ export function AppSidebar() {
                 Marcus Johnson
               </span>
               <span className="truncate text-[11px] text-muted-foreground">
-                Head Administrator
+                {activeRoleDetails?.name || "Head Administrator"}
               </span>
             </div>
           )}
           {!collapsed && (
-            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+              onClick={() => {
+                // Clear the session and role cookies
+                document.cookie = "los-session=; path=/; max-age=0";
+                document.cookie = "user-role=; path=/; max-age=0";
+                
+                // Force full reload to trigger proxy validation & clear cached client states
+                window.location.href = "/login";
+              }}
+              title="Log Out"
+            >
               <LogOut className="h-4 w-4" />
             </Button>
           )}
