@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Link from "next/link";
 import {
   CheckCircle2, Clock, XCircle, AlertCircle, ChevronRight, Filter, AlertTriangle, UserCheck, ShieldClose
 } from "lucide-react";
@@ -107,7 +108,9 @@ export function ApprovalCards({ approvals }: { approvals: Approval[] }) {
                     <span className="text-xs text-muted-foreground">{item.submitted}</span>
                     <div className="flex gap-2">
                       <Button size="sm" className="h-8">Approve</Button>
-                      <Button size="sm" variant="outline" className="h-8">Review</Button>
+                      <Link href={`/approvals/${item.id}`}>
+                        <Button size="sm" variant="outline" className="h-8">Review</Button>
+                      </Link>
                     </div>
                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   </div>
