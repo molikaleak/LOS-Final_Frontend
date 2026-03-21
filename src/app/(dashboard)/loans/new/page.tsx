@@ -28,18 +28,45 @@ import {
   Plus,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useOnboardingStore } from "@/lib/onboarding-store";
+import { useState, useMemo, useEffect } from "react";
 
-const steps = [
-  { id: 1, label: "Personal Info", icon: User },
-  { id: 2, label: "Loan Details", icon: FileText },
-  { id: 3, label: "Assets & Collateral", icon: Briefcase },
-  { id: 4, label: "Document Upload", icon: Upload },
-  { id: 5, label: "Review & Submit", icon: CheckSquare },
+const ALL_STEPS = [
+  { id: "personal-info", label: "Personal Info", icon: User },
+  { id: "loan-details", label: "Loan Details", icon: FileText },
+  { id: "assets-collateral", label: "Assets & Collateral", icon: Briefcase },
+  { id: "document-upload", label: "Document Upload", icon: Upload },
+  { id: "review-submit", label: "Review & Submit", icon: CheckSquare },
 ];
 
 export default function NewLoanPage() {
-  const [currentStep, setCurrentStep] = useState(1);
+  const { steps: stepConfigs } = useOnboardingStore();
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [loanAmount, setLoanAmount] = useState<number>(0);
+
+  // Dynamic steps based on config and condition
+  const steps = useMemo(() => {
+    return ALL_STEPS.filter(step => {
+      const config = stepConfigs.find(c => c.id === step.id);
+      if (!config || !config.enabled) return false;
+      
+      // Special condition for Assets & Collateral: only show if loan > minAmount
+      if (step.id === "assets-collateral") {
+        return loanAmount > (config.minAmount ?? 5000);
+      }
+      
+      return true;
+    });
+  }, [stepConfigs, loanAmount]);
+
+  const currentStep = steps[currentStepIndex];
+
+  // If steps change and current index is out of bounds, reset or adjust
+  useEffect(() => {
+    if (currentStepIndex >= steps.length) {
+      setCurrentStepIndex(Math.max(0, steps.length - 1));
+    }
+  }, [steps, currentStepIndex]);
 
   return (
     <div className="p-6">
@@ -57,12 +84,12 @@ export default function NewLoanPage() {
             <div className="flex items-center justify-between">
               {steps.map((step, i) => {
                 const Icon = step.icon;
-                const isActive = step.id === currentStep;
-                const isCompleted = step.id < currentStep;
+                const isActive = i === currentStepIndex;
+                const isCompleted = i < currentStepIndex;
                 return (
                   <div key={step.id} className="flex items-center">
                     <button
-                      onClick={() => setCurrentStep(step.id)}
+                      onClick={() => setCurrentStepIndex(i)}
                       className="flex items-center gap-2"
                     >
                       <div
@@ -74,7 +101,7 @@ export default function NewLoanPage() {
                               : "bg-muted text-muted-foreground"
                         }`}
                       >
-                        {isCompleted ? "✓" : step.id}
+                        {isCompleted ? "✓" : i + 1}
                       </div>
                       <span
                         className={`text-sm font-medium hidden lg:inline ${
@@ -98,7 +125,7 @@ export default function NewLoanPage() {
           </div>
 
           {/* Step Content */}
-          {currentStep === 1 && (
+          {currentStep?.id === "personal-info" && (
             <Card>
               <CardHeader>
                 <CardTitle>Personal Information</CardTitle>
@@ -182,7 +209,7 @@ export default function NewLoanPage() {
             </Card>
           )}
 
-          {currentStep === 2 && (
+          {currentStep?.id === "loan-details" && (
             <Card>
               <CardHeader>
                 <CardTitle>Loan Details</CardTitle>
@@ -212,9 +239,15 @@ export default function NewLoanPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
+                   <div className="space-y-2">
                     <Label htmlFor="amount">Loan Amount</Label>
-                    <Input id="amount" type="number" placeholder="50000" />
+                    <Input 
+                      id="amount" 
+                      type="number" 
+                      placeholder="50000" 
+                      value={loanAmount || ""}
+                      onChange={(e) => setLoanAmount(Number(e.target.value))}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Loan Term</Label>
@@ -249,7 +282,7 @@ export default function NewLoanPage() {
             </Card>
           )}
 
-          {currentStep === 3 && (
+          {currentStep?.id === "assets-collateral" && (
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -321,7 +354,7 @@ export default function NewLoanPage() {
             </Card>
           )}
 
-          {currentStep === 4 && (
+          {currentStep?.id === "document-upload" && (
             <Card>
               <CardHeader>
                 <CardTitle>Document Upload</CardTitle>
@@ -360,7 +393,7 @@ export default function NewLoanPage() {
             </Card>
           )}
 
-          {currentStep === 5 && (
+          {currentStep?.id === "review-submit" && (
             <Card>
               <CardHeader>
                 <CardTitle>Review & Submit</CardTitle>
@@ -429,14 +462,14 @@ export default function NewLoanPage() {
           <div className="flex items-center justify-between mt-6">
             <Button
               variant="outline"
-              onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
-              disabled={currentStep === 1}
+              onClick={() => setCurrentStepIndex(Math.max(0, currentStepIndex - 1))}
+              disabled={currentStepIndex === 0}
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Previous
             </Button>
-            {currentStep < 5 ? (
-              <Button onClick={() => setCurrentStep(Math.min(5, currentStep + 1))}>
+            {currentStepIndex < steps.length - 1 ? (
+              <Button onClick={() => setCurrentStepIndex(Math.min(steps.length - 1, currentStepIndex + 1))}>
                 Next Step
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>

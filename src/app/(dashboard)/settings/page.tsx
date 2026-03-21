@@ -5,6 +5,8 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +33,7 @@ import {
 } from "lucide-react";
 
 import { useRoleStore, ROLES } from "@/lib/store";
+import { useOnboardingStore } from "@/lib/onboarding-store";
 
 const MODULE_GROUPS = [
   {
@@ -66,6 +69,7 @@ const MODULE_GROUPS = [
 
 export default function SettingsPage() {
   const { permissions, currentRole, setPermission, setCurrentRole } = useRoleStore();
+  const { steps, toggleStep, setMinAmount } = useOnboardingStore();
   const [selectedRole, setSelectedRole] = useState(ROLES.find(r => r.id === currentRole) || ROLES[0]);
   const [isSaving, setIsSaving] = useState(false);
   const [showSavedMsg, setShowSavedMsg] = useState(false);
@@ -265,6 +269,68 @@ export default function SettingsPage() {
                   </div>
                 ))}
               </div>
+
+              {/* Onboarding Configuration Section */}
+              {selectedRole.id === "head-admin" && (
+                <div className="py-6 px-6 space-y-4 bg-muted/20 border-t border-border/50">
+                  <div className="flex items-center">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+                      Loan Onboarding Flow Configuration
+                    </h3>
+                    <Separator className="flex-1 ml-4" />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                    {steps.map(step => (
+                      <div 
+                        key={step.id} 
+                        className={cn(
+                          "flex flex-col gap-4 p-4 rounded-lg border transition-all duration-200",
+                          step.enabled ? "border-primary/20 bg-primary/5 shadow-sm" : "border-border/60 bg-card hover:bg-muted/30"
+                        )}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex flex-col gap-0.5">
+                            <span className={cn(
+                              "text-sm font-semibold",
+                              step.enabled ? "text-foreground" : "text-muted-foreground"
+                            )}>
+                              {step.label}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {step.id === 'assets-collateral' ? 'Requires "Assets & Collateral" for high-value loans' : `Visibility of this step`}
+                            </span>
+                          </div>
+                          <Switch 
+                            checked={step.enabled}
+                            onCheckedChange={() => toggleStep(step.id)}
+                          />
+                        </div>
+
+                        {step.enabled && step.id === 'assets-collateral' && (
+                          <div className="space-y-2 mt-2 pt-4 border-t border-border/40 animate-in fade-in slide-in-from-top-2">
+                             <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1">
+                               Condition: Loan Amount &gt;
+                             </Label>
+                             <div className="relative">
+                               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                               <Input 
+                                 type="number"
+                                 value={step.minAmount || 0}
+                                 onChange={(e) => setMinAmount(step.id, Number(e.target.value))}
+                                 className="h-9 pl-6 bg-background/50 border-primary/20 focus-visible:ring-primary/20"
+                               />
+                             </div>
+                             <p className="text-[10px] text-muted-foreground italic px-1">
+                               This step will only be shown if the loan amount exceeds this value.
+                             </p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </ScrollArea>
            
             {/* Save Button for Mobile */}
